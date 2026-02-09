@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Memoriom</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: white;
+      padding: 20px;
+    }
+    h1 { color: #38bdf8; }
+    .box {
+      background: #1e293b;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+    }
+    button {
+      margin-left: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+    .safe { color: #22c55e; }
+    .danger { color: #ef4444; }
+    .bar {
+      background: #334155;
+      height: 18px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+    .fill {
+      height: 100%;
+      width: 0%;
+      background: #38bdf8;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Memoriom</h1>
+  <p>Upload files you don’t need right now. Scan before storing.</p>
+
+  <div class="box">
+    <input type="file" id="fileInput">
+    <button onclick="addFile()">Upload</button>
+  </div>
+
+  <div class="box">
+    <b>Storage used:</b> <span id="used">0</span> / 100 MB
+    <div class="bar">
+      <div class="fill" id="fill"></div>
+    </div>
+  </div>
+
+  <div class="box">
+    <h3>Your Files</h3>
+    <ul id="fileList"></ul>
+  </div>
+
+<script>
+  let usedMB = 0;
+  const maxMB = 100;
+  let storedFiles = [];
+
+  function addFile() {
+    const input = document.getElementById("fileInput");
+    if (!input.files.length) return;
+
+    const file = input.files[0];
+    const sizeMB = Math.ceil(file.size / 1024 / 1024);
+
+    if (usedMB + sizeMB > maxMB) {
+      alert("Not enough storage!");
+      return;
+    }
+
+    storedFiles.push({
+      file: file,
+      name: file.name,
+      sizeMB: sizeMB
+    });
+
+    usedMB += sizeMB;
+    updateBar();
+    renderFiles();
+    input.value = "";
+  }
+
+  function renderFiles() {
+    const list = document.getElementById("fileList");
+    list.innerHTML = "";
+
+    storedFiles.forEach((f, index) => {
+      const li = document.createElement("li");
+      li.textContent = f.name + " (" + f.sizeMB + " MB) ";
+
+      const scanBtn = document.createElement("button");
+      scanBtn.textContent = "Scan";
+      scanBtn.onclick = () => scanFile(index);
+
+      const downBtn = document.createElement("button");
+      downBtn.textContent = "Download";
+      downBtn.onclick = () => downloadFile(f.file);
+
+      li.appendChild(scanBtn);
+      li.appendChild(downBtn);
+      list.appendChild(li);
+    });
+  }
+
+  function scanFile(index) {
+    const f = storedFiles[index];
+
+    const dangerous =
+      f.name.endsWith(".exe") ||
+      f.name.endsWith(".bat") ||
+      (f.name.endsWith(".js") && Math.random() > 0.5);
+
+    if (dangerous) {
+      const del = confirm("⚠ This file looks suspicious. Delete it?");
+      if (del) {
+        usedMB -= f.sizeMB;
+        storedFiles.splice(index, 1);
+        updateBar();
+        renderFiles();
+      }
+    } else {
+      alert("✓ File is safe.");
+    }
+  }
+
+  function downloadFile(file) {
+    const url = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = file.name;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function updateBar() {
+    document.getElementById("used").textContent = usedMB;
+    document.getElementById("fill").style.width =
+      (usedMB / maxMB) * 100 + "%";
+  }
+</script>
+
+</body>
+</html>
